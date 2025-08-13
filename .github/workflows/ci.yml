@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        php-version: ['8.2', '8.3', '8.4']
+        php-version: ['8.3', '8.4']
 
     steps:
     - uses: actions/checkout@v4
@@ -29,18 +29,18 @@ jobs:
       uses: actions/cache@v4
       with:
         path: vendor
-        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.lock') }}
+        key: ${{ runner.os }}-php-${{ matrix.php-version }}-${{ hashFiles('**/composer.json') }}
         restore-keys: |
           ${{ runner.os }}-php-${{ matrix.php-version }}-
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      run: composer update --prefer-dist --no-progress --no-interaction
 
     - name: Run tests
       run: composer test
 
     - name: Run tests with coverage
-      if: matrix.php-version == '8.2'
+      if: matrix.php-version == '8.3'
       run: composer test-coverage
 
   code-style:
@@ -52,7 +52,7 @@ jobs:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
+        php-version: '8.3'
         extensions: mbstring, xml, ctype, iconv, intl
 
     - name: Cache Composer packages
@@ -60,12 +60,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: vendor
-        key: ${{ runner.os }}-php-8.2-${{ hashFiles('**/composer.lock') }}
+        key: ${{ runner.os }}-php-8.3-${{ hashFiles('**/composer.json') }}
         restore-keys: |
-          ${{ runner.os }}-php-8.2-
+          ${{ runner.os }}-php-8.3-
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      run: composer update --prefer-dist --no-progress --no-interaction
 
     - name: Check code style
       run: composer cs-check
@@ -79,7 +79,7 @@ jobs:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2'
+        php-version: '8.3'
         extensions: mbstring, xml, ctype, iconv, intl
 
     - name: Cache Composer packages
@@ -87,12 +87,12 @@ jobs:
       uses: actions/cache@v4
       with:
         path: vendor
-        key: ${{ runner.os }}-php-8.2-${{ hashFiles('**/composer.lock') }}
+        key: ${{ runner.os }}-php-8.3-${{ hashFiles('**/composer.json') }}
         restore-keys: |
-          ${{ runner.os }}-php-8.2-
+          ${{ runner.os }}-php-8.3-
 
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      run: composer update --prefer-dist --no-progress --no-interaction
 
     - name: Run Psalm
       run: composer psalm

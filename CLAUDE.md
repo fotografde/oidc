@@ -64,8 +64,8 @@ Tests are located in the `tests/` directory with full coverage of both main comp
 ### CI/CD
 
 The repository includes GitHub Actions workflows (`.github/workflows/ci.yml`) that run:
-- **Tests**: PHPUnit across PHP 8.2, 8.3, and 8.4
-- **Code Style**: PHP-CS-Fixer validation
+- **Tests**: PHPUnit across PHP 8.3 and 8.4
+- **Code Style**: PHP-CS-Fixer validation  
 - **Static Analysis**: Psalm type checking
 
 All checks must pass before merging pull requests.

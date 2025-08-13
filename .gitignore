@@ -1,2 +1,21 @@
+# Dependencies
+/vendor/
+
+# Composer
 /composer.lock
-/.phpunit.result.cache
+
+# Cache directories
+/.ci-cache/
+
+# PHPUnit
+.phpunit.result.cache
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
