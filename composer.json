@@ -1,5 +1,5 @@
 {
-    "name": "gotphoto/oidc",
+    "name": "gpht/oidc",
     "type": "library",
     "description": "OIDC (OpenID Connect) library ",
     "license": "MIT",
