@@ -20,6 +20,7 @@ final readonly class OidcClientToken
 
     /**
      * @param array<non-empty-string> $scope
+     *
      * @return non-empty-string
      */
     public function clientCredentialToken(array $scope = []): string
@@ -45,7 +46,7 @@ final readonly class OidcClientToken
 
         $responseData = $response->toArray();
 
-        if (!isset($responseData['access_token']) || !is_string($responseData['access_token']) || $responseData['access_token'] === '') {
+        if (!isset($responseData['access_token']) || !is_string($responseData['access_token']) || '' === $responseData['access_token']) {
             throw new \RuntimeException('OIDC token response missing access_token field');
         }
 
