@@ -6,6 +6,7 @@
     "require": {
         "php": ">=8.3",
         "nyholm/psr7": "^1.8",
+        "psr/cache": "^3.0",
         "psr/http-client": "^1.0",
         "symfony/security-core": "^6.4|^7.0"
     },

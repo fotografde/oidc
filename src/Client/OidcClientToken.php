@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Gpht\Oidc\Client;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Http\Client\ClientInterface;
 
 final readonly class OidcClientToken
@@ -13,6 +14,7 @@ final readonly class OidcClientToken
 
     public function __construct(
         private ClientInterface $client,
+        private CacheItemPoolInterface $cache,
         private string $tokenEndpoint,
         private string $cognitoClientId,
         private string $cognitoClientSecret,
@@ -26,6 +28,20 @@ final readonly class OidcClientToken
      */
     public function clientCredentialToken(array $scope = []): string
     {
+        $cacheKey = $this->generateCacheKey($scope);
+        
+        // Try to get token from cache first
+        $cacheItem = $this->cache->getItem($cacheKey);
+        if ($cacheItem->isHit()) {
+            /** @var mixed $cachedData */
+            $cachedData = $cacheItem->get();
+            if (is_array($cachedData) && isset($cachedData['token']) && is_string($cachedData['token']) && $cachedData['token'] !== '' && isset($cachedData['expires_at']) && is_int($cachedData['expires_at'])) {
+                if ($cachedData['expires_at'] > time()) {
+                    return $cachedData['token'];
+                }
+            }
+        }
+
         $credentials = base64_encode($this->cognitoClientId.':'.$this->cognitoClientSecret);
 
         $postData = http_build_query([
@@ -51,6 +67,28 @@ final readonly class OidcClientToken
             throw new \RuntimeException('OIDC token response missing access_token field');
         }
 
-        return $responseData['access_token'];
+        $token = $responseData['access_token'];
+        
+        // Cache the token with expiration
+        $expiresIn = isset($responseData['expires_in']) && is_int($responseData['expires_in']) ? $responseData['expires_in'] : 3600;
+        $expiresAt = time() + $expiresIn - 60; // Subtract 60 seconds for buffer
+        
+        $cacheItem = $this->cache->getItem($cacheKey);
+        $cacheItem->set([
+            'token' => $token,
+            'expires_at' => $expiresAt,
+        ]);
+        $cacheItem->expiresAt(new \DateTimeImmutable('@' . $expiresAt));
+        $this->cache->save($cacheItem);
+
+        return $token;
+    }
+
+    private function generateCacheKey(array $scope): string
+    {
+        /** @var array<string> $mergedScopes */
+        $mergedScopes = array_merge(self::SCOPES_DEFAULT, $scope);
+        $scopeString = join(' ', $mergedScopes);
+        return 'oidc_token_' . hash('sha256', $this->cognitoClientId . ':' . $scopeString);
     }
 }
