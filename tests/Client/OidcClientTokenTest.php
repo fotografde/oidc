@@ -6,8 +6,9 @@ namespace Tests\Client;
 
 use Gpht\Oidc\Client\OidcClientToken;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\HttpClient\MockHttpClient;
-use Symfony\Component\HttpClient\Response\MockResponse;
+use Psr\Http\Client\ClientInterface;
+use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 
 final class OidcClientTokenTest extends TestCase
 {
@@ -18,15 +19,15 @@ final class OidcClientTokenTest extends TestCase
     public function testClientCredentialTokenSuccess(): void
     {
         $expectedToken = 'test-access-token';
-        $mockResponse = new MockResponse(json_encode([
+        $responseBody = json_encode([
             'access_token' => $expectedToken,
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ]);
 
-        $httpClient = new MockHttpClient($mockResponse);
+        $mockClient = $this->createMockClient(200, $responseBody);
         $oidcClient = new OidcClientToken(
-            $httpClient,
+            $mockClient,
             self::TOKEN_ENDPOINT,
             self::CLIENT_ID,
             self::CLIENT_SECRET
@@ -41,16 +42,15 @@ final class OidcClientTokenTest extends TestCase
     {
         $expectedToken = 'test-access-token-with-scopes';
         $customScopes = ['custom/read', 'custom/write'];
-
-        $mockResponse = new MockResponse(json_encode([
+        $responseBody = json_encode([
             'access_token' => $expectedToken,
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ]);
 
-        $httpClient = new MockHttpClient($mockResponse);
+        $mockClient = $this->createMockClient(200, $responseBody);
         $oidcClient = new OidcClientToken(
-            $httpClient,
+            $mockClient,
             self::TOKEN_ENDPOINT,
             self::CLIENT_ID,
             self::CLIENT_SECRET
@@ -63,11 +63,9 @@ final class OidcClientTokenTest extends TestCase
 
     public function testClientCredentialTokenHttpError(): void
     {
-        $mockResponse = new MockResponse('Unauthorized', ['http_code' => 401]);
-        $httpClient = new MockHttpClient($mockResponse);
-
+        $mockClient = $this->createMockClient(401, 'Unauthorized');
         $oidcClient = new OidcClientToken(
-            $httpClient,
+            $mockClient,
             self::TOKEN_ENDPOINT,
             self::CLIENT_ID,
             self::CLIENT_SECRET
@@ -81,14 +79,14 @@ final class OidcClientTokenTest extends TestCase
 
     public function testClientCredentialTokenMissingAccessToken(): void
     {
-        $mockResponse = new MockResponse(json_encode([
+        $responseBody = json_encode([
             'token_type' => 'Bearer',
             'expires_in' => 3600,
-        ]));
+        ]);
 
-        $httpClient = new MockHttpClient($mockResponse);
+        $mockClient = $this->createMockClient(200, $responseBody);
         $oidcClient = new OidcClientToken(
-            $httpClient,
+            $mockClient,
             self::TOKEN_ENDPOINT,
             self::CLIENT_ID,
             self::CLIENT_SECRET
@@ -102,18 +100,32 @@ final class OidcClientTokenTest extends TestCase
 
     public function testClientCredentialTokenInvalidJson(): void
     {
-        $mockResponse = new MockResponse('invalid json response');
-        $httpClient = new MockHttpClient($mockResponse);
-
+        $mockClient = $this->createMockClient(200, 'invalid json response');
         $oidcClient = new OidcClientToken(
-            $httpClient,
+            $mockClient,
             self::TOKEN_ENDPOINT,
             self::CLIENT_ID,
             self::CLIENT_SECRET
         );
 
-        $this->expectException(\Symfony\Component\HttpClient\Exception\JsonException::class);
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('OIDC token response missing access_token field');
 
         $oidcClient->clientCredentialToken();
+    }
+
+    private function createMockClient(int $statusCode, string $responseBody): ClientInterface
+    {
+        $stream = $this->createMock(StreamInterface::class);
+        $stream->method('getContents')->willReturn($responseBody);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn($statusCode);
+        $response->method('getBody')->willReturn($stream);
+
+        $client = $this->createMock(ClientInterface::class);
+        $client->method('sendRequest')->willReturn($response);
+
+        return $client;
     }
 }

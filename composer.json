@@ -5,7 +5,8 @@
     "license": "MIT",
     "require": {
         "php": ">=8.3",
-        "symfony/http-client": "^6.4|^7.0",
+        "nyholm/psr7": "^1.8",
+        "psr/http-client": "^1.0",
         "symfony/security-core": "^6.4|^7.0"
     },
     "require-dev": {
