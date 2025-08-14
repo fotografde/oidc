@@ -29,13 +29,12 @@ final readonly class OidcClientToken
     public function clientCredentialToken(array $scope = []): string
     {
         $cacheKey = $this->generateCacheKey($scope);
-        
+
         // Try to get token from cache first
         $cacheItem = $this->cache->getItem($cacheKey);
         if ($cacheItem->isHit()) {
-            /** @var mixed $cachedData */
             $cachedData = $cacheItem->get();
-            if (is_array($cachedData) && isset($cachedData['token']) && is_string($cachedData['token']) && $cachedData['token'] !== '' && isset($cachedData['expires_at']) && is_int($cachedData['expires_at'])) {
+            if (is_array($cachedData) && isset($cachedData['token']) && is_string($cachedData['token']) && '' !== $cachedData['token'] && isset($cachedData['expires_at']) && is_int($cachedData['expires_at'])) {
                 if ($cachedData['expires_at'] > time()) {
                     return $cachedData['token'];
                 }
@@ -68,17 +67,17 @@ final readonly class OidcClientToken
         }
 
         $token = $responseData['access_token'];
-        
+
         // Cache the token with expiration
         $expiresIn = isset($responseData['expires_in']) && is_int($responseData['expires_in']) ? $responseData['expires_in'] : 3600;
         $expiresAt = time() + $expiresIn - 60; // Subtract 60 seconds for buffer
-        
+
         $cacheItem = $this->cache->getItem($cacheKey);
         $cacheItem->set([
             'token' => $token,
             'expires_at' => $expiresAt,
         ]);
-        $cacheItem->expiresAt(new \DateTimeImmutable('@' . $expiresAt));
+        $cacheItem->expiresAt(new \DateTimeImmutable('@'.$expiresAt));
         $this->cache->save($cacheItem);
 
         return $token;
@@ -89,6 +88,7 @@ final readonly class OidcClientToken
         /** @var array<string> $mergedScopes */
         $mergedScopes = array_merge(self::SCOPES_DEFAULT, $scope);
         $scopeString = join(' ', $mergedScopes);
-        return 'oidc_token_' . hash('sha256', $this->cognitoClientId . ':' . $scopeString);
+
+        return 'oidc_token_'.hash('sha256', $this->cognitoClientId.':'.$scopeString);
     }
 }

@@ -53,7 +53,7 @@ final class OidcClientTokenTest extends TestCase
 
         $mockClient = $this->createMockClient(200, $responseBody);
         $mockCache = $this->createMockCache(false); // Cache miss first time
-        
+
         $oidcClient = new OidcClientToken(
             $mockClient,
             $mockCache,
@@ -71,7 +71,7 @@ final class OidcClientTokenTest extends TestCase
         $cachedToken = 'cached-token';
         $mockClient = $this->createMockClient(200, '{}'); // This should not be called
         $mockCache = $this->createMockCache(true, $cachedToken); // Cache hit
-        
+
         $oidcClient = new OidcClientToken(
             $mockClient,
             $mockCache,
@@ -187,14 +187,14 @@ final class OidcClientTokenTest extends TestCase
     {
         $cacheItem = $this->createMock(CacheItemInterface::class);
         $cacheItem->method('isHit')->willReturn($cacheHit);
-        
-        if ($cacheHit && $cachedToken !== null) {
+
+        if ($cacheHit && null !== $cachedToken) {
             $cacheItem->method('get')->willReturn([
                 'token' => $cachedToken,
                 'expires_at' => time() + 1800, // Valid for 30 minutes
             ]);
         }
-        
+
         $cacheItem->method('set')->willReturnSelf();
         $cacheItem->method('expiresAt')->willReturnSelf();
 
